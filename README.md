@@ -1,2 +1,2 @@
 # morphine
-MORPHeme based Intent &amp; Entity classifier
+MORPHeme based Intent N Entity classifier
