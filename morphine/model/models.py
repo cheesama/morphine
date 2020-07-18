@@ -33,6 +33,9 @@ class EmbeddingTransformer(nn.Module):
         self.intent_feature = nn.Linear(d_model, intent_class_num)
         self.entity_feature = nn.Linear(d_model, entity_class_num)
 
+        nn.init.xavier_uniform_(self.intent_feauture)
+        nn.init.xavier_uniform_(self.entity_feauture)
+
     def forward(self, x):
         src_key_padding_mask = x == self.pad_token_id
         embedding = self.embedding(x)
