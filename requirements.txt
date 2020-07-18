@@ -1,0 +1,6 @@
+pynori
+python-crfsuite
+scikit-learn
+
+pytorch-nlp
+pytorch-lightning
