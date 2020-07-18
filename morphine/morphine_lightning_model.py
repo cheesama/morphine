@@ -12,7 +12,10 @@ from pytorch_lightning.metrics.functional import f1_score
 from torchnlp.metrics import get_accuracy, get_token_accuracy
 from sklearn.metrics import balanced_accuracy_score
 
-from .dataset.intent_entity_dataset import RasaIntentEntityDataset, token_concat_collate_fn
+from .dataset.intent_entity_dataset import (
+    RasaIntentEntityDataset,
+    token_concat_collate_fn,
+)
 from .model.models import EmbeddingTransformer
 
 import os, sys
@@ -21,6 +24,7 @@ import multiprocessing
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+
 
 class MorphineClassifier(pl.LightningModule):
     def __init__(self, hparams):
@@ -32,7 +36,11 @@ class MorphineClassifier(pl.LightningModule):
 
         self.dataset = RasaIntentEntityDataset(markdown_lines=self.hparams.nlu_data)
 
-        self.model = EmbeddingTransformer(len(self.dataset.vocab_dict), len(self.dataset.intent_dict), len(self.dataset.entity_dict))
+        self.model = EmbeddingTransformer(
+            len(self.dataset.vocab_dict),
+            len(self.dataset.intent_dict),
+            len(self.dataset.entity_dict),
+        )
         self.train_ratio = self.hparams.train_ratio
         self.batch_size = self.hparams.batch_size
         self.optimizer = self.hparams.optimizer
@@ -42,8 +50,12 @@ class MorphineClassifier(pl.LightningModule):
         self.intent_loss_fn = nn.CrossEntropyLoss()
 
         # ignore O tag class label to figure out entity imbalance distribution
-        self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.dataset.pad_token_id)
-        #self.entity_loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor([0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)))
+        # self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.dataset.pad_token_id)
+        self.entity_loss_fn = nn.CrossEntropyLoss(
+            weight=torch.Tensor(
+                [0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)
+            )
+        )
 
     def forward(self, x):
         return self.model(x)
@@ -55,9 +67,22 @@ class MorphineClassifier(pl.LightningModule):
             self.dataset, [train_length, len(self.dataset) - train_length],
         )
 
-        intent_sampling_weights = [ 1 / item[1] for item in sorted(Counter([each_dataset[1] for each_dataset in self.train_dataset]).items())]
-        sampling_weights = [intent_sampling_weights[item[1]] for item in self.train_dataset]
-        self.sampler = WeightedRandomSampler(sampling_weights, len(sampling_weights), replacement=False)
+        '''
+        intent_sampling_weights = [
+            1 / item[1]
+            for item in sorted(
+                Counter(
+                    [each_dataset[1] for each_dataset in self.train_dataset]
+                ).items()
+            )
+        ]
+        sampling_weights = [
+            intent_sampling_weights[item[1]] for item in self.train_dataset
+        ]
+        self.sampler = WeightedRandomSampler(
+            sampling_weights, len(sampling_weights), replacement=False
+        )
+        '''
 
         self.hparams.intent_label = self.get_intent_label()
         self.hparams.entity_label = self.get_entity_label()
@@ -80,7 +105,7 @@ class MorphineClassifier(pl.LightningModule):
             batch_size=self.batch_size,
             num_workers=multiprocessing.cpu_count(),
             collate_fn=token_concat_collate_fn,
-            sampler=self.sampler
+            #sampler=self.sampler,
         )
         return train_loader
 
@@ -95,13 +120,9 @@ class MorphineClassifier(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizers = [
-            eval(
-                f"{self.optimizer}(self.parameters(), lr={self.intent_optimizer_lr})"
-            ),
-            eval(
-                f"{self.optimizer}(self.parameters(), lr={self.entity_optimizer_lr})"
-            ),
-            #eval(f"{self.optimizer}(self.intent_center_loss_fn.parameters(), lr={self.intent_optimizer_lr})")
+            eval(f"{self.optimizer}(self.parameters(), lr={self.intent_optimizer_lr})"),
+            eval(f"{self.optimizer}(self.parameters(), lr={self.entity_optimizer_lr})"),
+            # eval(f"{self.optimizer}(self.intent_center_loss_fn.parameters(), lr={self.intent_optimizer_lr})")
         ]
 
         schedulers = [
@@ -117,11 +138,9 @@ class MorphineClassifier(pl.LightningModule):
                 "interval": "epoch",
                 "frequency": 1,
             },
-
         ]
 
         return optimizers, schedulers
-
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         self.model.train()
@@ -132,7 +151,9 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = balanced_accuracy_score(entity_idx.cpu().tolist()[0], entity_pred.max(2)[1].cpu().tolist()[0])
+        entity_acc = balanced_accuracy_score(
+            entity_idx.cpu().tolist()[0], entity_pred.max(2)[1].cpu().tolist()[0]
+        )
 
         tensorboard_logs = {
             "train/intent/acc": intent_acc,
@@ -150,7 +171,9 @@ class MorphineClassifier(pl.LightningModule):
             }
 
         if optimizer_idx == 1:
-            entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long(),)
+            entity_loss = self.entity_loss_fn(
+                entity_pred.transpose(1, 2), entity_idx.long(),
+            )
             tensorboard_logs["train/entity/loss"] = entity_loss
 
             return {
@@ -167,16 +190,20 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = balanced_accuracy_score(entity_idx.cpu().tolist()[0], entity_pred.max(2)[1].cpu().tolist()[0])
+        entity_acc = balanced_accuracy_score(
+            entity_idx.cpu().tolist()[0], entity_pred.max(2)[1].cpu().tolist()[0]
+        )
 
-        intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),) 
-        entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long(),)
+        intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),)
+        entity_loss = self.entity_loss_fn(
+            entity_pred.transpose(1, 2), entity_idx.long(),
+        )
 
         return {
             "val_intent_acc": torch.Tensor([intent_acc]),
             "val_intent_f1": torch.Tensor([intent_f1]),
             "val_entity_acc": torch.Tensor([entity_acc]),
-            "val_loss": intent_loss + entity_loss# + intent_center_loss,
+            "val_loss": intent_loss + entity_loss,  # + intent_center_loss,
         }
 
     def validation_epoch_end(self, outputs):
