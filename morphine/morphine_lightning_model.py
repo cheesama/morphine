@@ -144,6 +144,15 @@ class MorphineClassifier(pl.LightningModule):
         tokens, intent_idx, entity_idx = batch
         intent_pred, entity_pred = self.forward(tokens)
 
+        if torch.isnan(intent_pred).sum().item() > 0:
+            print ('intent_pred error')
+        if torch.isnan(entity_pred).sum().item() > 0:
+            print ('entity_pred error')
+        if torch.isnan(intent_idx).sum().item() > 0:
+            print ('intent_idx error')
+        if torch.isnan(entity_idx).sum().item() > 0:
+            print ('entity_idx error')
+
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
