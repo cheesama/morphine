@@ -3,4 +3,4 @@ python-crfsuite
 scikit-learn
 
 pytorch-nlp
-torch
+pytorch-lightning
