@@ -146,6 +146,9 @@ class MorphineClassifier(pl.LightningModule):
 
         if torch.isnan(intent_pred).sum().item() > 0:
             print ('intent_pred error')
+            print (tokens)
+            print (intent_idx)
+            print (entity_idx)
         if torch.isnan(entity_pred).sum().item() > 0:
             print ('entity_pred error')
         if torch.isnan(intent_idx).sum().item() > 0:
