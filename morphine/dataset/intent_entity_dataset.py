@@ -196,7 +196,8 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        tokens = self.encode(self.dataset[idx]["text"])
+        tokens = self.tokenize(self.dataset[idx]["text"])
+        token_ids = [ self.vocab_dict.get(vocab, self.pad_token_id) for vocab in tokens ]
 
         intent_idx = self.dataset[idx]["intent_idx"]
 
@@ -206,16 +207,13 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
             ##check whether entity value is include in splitted token
             for token_seq, token_value in enumerate(tokens):
                 for entity_seq, entity_info in enumerate(self.dataset[idx]["entities"]):
-                    if (
-                        self.tokenizer.convert_ids_to_tokens([token_value.item()])[0]
-                        in entity_info["value"]
-                    ):
+                    if token_value == entity_info["value"]:
                         entity_idx[token_seq] = entity_info["entity_idx"]
                         break
 
         entity_idx = torch.from_numpy(entity_idx)
 
-        return tokens, intent_idx, entity_idx
+        return torch.tensor(token_ids), intent_idx, entity_idx
 
     def get_intent_idx(self):
         return self.intent_dict
@@ -233,5 +231,9 @@ def token_concat_collate_fn(batch):
     tokens = rnn_utils.pad_sequence([each_data[0] for each_data in batch], batch_first=True).long()
     intent_indices = torch.tensor([each_data[1] for each_data in batch]).long()
     entity_indices = rnn_utils.pad_sequence([each_data[2] for each_data in batch], batch_first=True).long()
+
+    print (tokens)
+    print (intent_indices)
+    print (entity_indices)
 
     return (tokens, intent_indices, entity_indices)
