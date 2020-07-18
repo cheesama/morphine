@@ -50,12 +50,8 @@ class MorphineClassifier(pl.LightningModule):
         self.intent_loss_fn = nn.CrossEntropyLoss()
 
         # ignore O tag class label to figure out entity imbalance distribution
-        # self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.dataset.pad_token_id)
-        self.entity_loss_fn = nn.CrossEntropyLoss(
-            weight=torch.Tensor(
-                [0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)
-            )
-        )
+        self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.dataset.pad_token_id)
+        #self.entity_loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor([0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)))
 
     def forward(self, x):
         return self.model(x)
@@ -103,7 +99,7 @@ class MorphineClassifier(pl.LightningModule):
         train_loader = DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
-            num_workers=multiprocessing.cpu_count(),
+            num_workers=multiprocessing.cpu_count() * 2,
             collate_fn=token_concat_collate_fn,
             #sampler=self.sampler,
         )
@@ -113,7 +109,7 @@ class MorphineClassifier(pl.LightningModule):
         val_loader = DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
-            num_workers=multiprocessing.cpu_count(),
+            num_workers=multiprocessing.cpu_count() * 2,
             collate_fn=token_concat_collate_fn,
         )
         return val_loader
@@ -162,7 +158,7 @@ class MorphineClassifier(pl.LightningModule):
         }
 
         if optimizer_idx == 0:
-            intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),)
+            intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long())
             tensorboard_logs["train/intent/loss"] = intent_loss
 
             return {
@@ -171,9 +167,7 @@ class MorphineClassifier(pl.LightningModule):
             }
 
         if optimizer_idx == 1:
-            entity_loss = self.entity_loss_fn(
-                entity_pred.transpose(1, 2), entity_idx.long(),
-            )
+            entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
             tensorboard_logs["train/entity/loss"] = entity_loss
 
             return {
