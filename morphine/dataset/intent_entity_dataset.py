@@ -232,8 +232,4 @@ def token_concat_collate_fn(batch):
     intent_indices = torch.tensor([each_data[1] for each_data in batch]).long()
     entity_indices = rnn_utils.pad_sequence([each_data[2] for each_data in batch], batch_first=True).long()
 
-    print (tokens)
-    print (intent_indices)
-    print (entity_indices)
-
     return (tokens, intent_indices, entity_indices)
