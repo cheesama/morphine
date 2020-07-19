@@ -41,8 +41,8 @@ class EmbeddingTransformer(nn.Module):
         embedding = self.embedding(x)
 
         # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-        feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
-        #feature = self.encoder(embedding.transpose(1, 0)).transpose(1,0)
+        #feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
+        feature = self.encoder(embedding.transpose(1, 0)).transpose(1,0)
 
         intent_pred = self.intent_feature(feature.mean(1))
         entity_pred = self.entity_feature(feature)
