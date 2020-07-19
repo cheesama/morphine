@@ -10,7 +10,7 @@ class EmbeddingTransformer(nn.Module):
         vocab_size: int,
         intent_class_num: int,
         entity_class_num: int,
-        d_model=128,
+        d_model=256,
         nhead=8,
         num_encoder_layers=2,
         dim_feedforward=512,
