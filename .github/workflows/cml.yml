@@ -19,9 +19,11 @@ jobs:
           pip install -r requirements.txt
           pip install .
           
+          cd tests && wget ${{ secrets.DATA_PATH }} && python train_morphine_model.py
+          ls tests
+          
+          # write CML report
           cml-tensorboard-dev --logdir tests/lightning_logs --md --name "Go to tensorboard" >> report.md
           cml-send-comment report.md
-          
-          cd tests && wget ${{ secrets.DATA_PATH }} && python train_morphine_model.py
           
           
