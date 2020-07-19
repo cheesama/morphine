@@ -1,6 +1,7 @@
-pynori
-python-crfsuite
+pynori==0.2.0
 scikit-learn
 
+# models
+python-crfsuite
 pytorch-nlp
 pytorch-lightning
