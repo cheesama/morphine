@@ -21,10 +21,14 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
     """
 
     def __init__(self, markdown_lines: List[str], pad_token_id=0):
+        self.pad_token_id = pad_token_id
+
         self.intent_dict = {}
         self.entity_dict = {}
-        self.vocab_dict = {}  # set 0 as pad token(handle unknown & padding vocab)
         self.entity_dict["O"] = 0  # using BIO tagging
+
+        self.vocab_dict = {}
+        self.vocab_dict['[PAD]'] = self.pad_token_id  # set 0 as pad token(handle unknown & padding vocab)
 
         self.dataset = []
 
@@ -42,7 +46,6 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
             synonym_filter=False,
             mode_synonym="NORM",
         )
-        self.pad_token_id = pad_token_id
 
         current_intent_focus = ""
 
