@@ -10,11 +10,11 @@ class EmbeddingTransformer(nn.Module):
         vocab_size: int,
         intent_class_num: int,
         entity_class_num: int,
-        d_model=256,
+        d_model=512,
         nhead=8,
         num_encoder_layers=2,
         dim_feedforward=1024,
-        dropout=0.1,
+        dropout=0.2,
         activation="relu",
         pad_token_id: int = 0,
     ):
