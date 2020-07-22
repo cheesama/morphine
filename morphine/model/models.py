@@ -12,8 +12,8 @@ class EmbeddingTransformer(nn.Module):
         entity_class_num: int,
         d_model=256,
         nhead=8,
-        num_encoder_layers=2,
-        dim_feedforward=512,
+        num_encoder_layers=4,
+        dim_feedforward=1024,
         dropout=0.2,
         activation="relu",
         pad_token_id: int = 0,
@@ -42,9 +42,9 @@ class EmbeddingTransformer(nn.Module):
 
         # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
         #feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
-        feature = self.encoder(embedding.transpose(1, 0)).transpose(1,0)
+        feature = self.encoder(embedding.transpose(1, 0)).transpose(1,0) * src_key_padding_mask.float().unsqueeze(2).repeat(1,1,embedding.size(2))
 
-        intent_pred = self.intent_feature(feature.mean(1))
+        intent_pred = self.intent_feature(feature.sum(1))
         entity_pred = self.entity_feature(feature)
 
         return intent_pred, entity_pred
