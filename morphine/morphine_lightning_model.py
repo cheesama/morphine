@@ -40,6 +40,7 @@ class MorphineClassifier(pl.LightningModule):
             len(self.dataset.vocab_dict),
             len(self.dataset.intent_dict),
             len(self.dataset.entity_dict),
+            self.dataset.max_seq_len
         )
         self.train_ratio = self.hparams.train_ratio
         self.batch_size = self.hparams.batch_size

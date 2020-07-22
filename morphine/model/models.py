@@ -10,6 +10,7 @@ class EmbeddingTransformer(nn.Module):
         vocab_size: int,
         intent_class_num: int,
         entity_class_num: int,
+        max_seq_len: int,
         d_model=256,
         nhead=8,
         num_encoder_layers=4,
@@ -20,6 +21,7 @@ class EmbeddingTransformer(nn.Module):
     ):
         super(EmbeddingTransformer, self).__init__()
         self.pad_token_id = pad_token_id
+        self.max_seq_len = max_seq_len
 
         self.encoder = nn.TransformerEncoder(
             TransformerEncoderLayer(
@@ -30,6 +32,7 @@ class EmbeddingTransformer(nn.Module):
         )
 
         self.embedding = nn.Embedding(vocab_size, d_model)
+        self.position_embedding = nn.Embedding(self.max_seq_len, d_model)
         self.intent_feature = nn.Linear(d_model, intent_class_num)
         self.entity_feature = nn.Linear(d_model, entity_class_num)
 
@@ -39,12 +42,13 @@ class EmbeddingTransformer(nn.Module):
     def forward(self, x):
         src_key_padding_mask = (x == self.pad_token_id)
         embedding = self.embedding(x)
+        embedding += self.position_embedding(torch.arange(x.size(1)).repeat(x.size(0),1).type_as(embedding)
 
         # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
         #feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
         feature = self.encoder(embedding.transpose(1, 0)).transpose(1,0) * src_key_padding_mask.float().unsqueeze(2).repeat(1,1,embedding.size(2))
 
-        intent_pred = self.intent_feature(feature.sum(1))
+        intent_pred = self.intent_feature(feature.mean(1))
         entity_pred = self.entity_feature(feature)
 
         return intent_pred, entity_pred
