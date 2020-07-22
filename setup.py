@@ -5,7 +5,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="morphine",
-    version="0.1",
+    version="0.2",
     description="MORPHeme based Intent N Entity classifier",
     author="Cheesama",
     install_requires=required,
