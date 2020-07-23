@@ -13,7 +13,7 @@ class EmbeddingTransformer(nn.Module):
         max_seq_len: int,
         d_model=256,
         nhead=8,
-        num_encoder_layers=4,
+        num_encoder_layers=8,
         dim_feedforward=1024,
         dropout=0.2,
         activation="relu",
