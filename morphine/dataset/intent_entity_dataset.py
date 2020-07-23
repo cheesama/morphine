@@ -31,6 +31,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         self.vocab_dict['[PAD]'] = self.pad_token_id  # set 0 as pad token(handle unknown & padding vocab)
 
         self.dataset = []
+        self.max_seq_len = 0
 
         intent_value_list = []
         entity_type_list = []
@@ -83,6 +84,8 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
                     if len(text) > 0:
                         vocab_list = self.tokenizer.do_analysis(text)['termAtt']
+                        self.max_seq_len = max(self.max_seq_len, len(vocab_list))
+
                         for vocab in vocab_list:
                             if vocab not in self.vocab_dict.keys():
                                 self.vocab_dict[vocab] = len(self.vocab_dict)
@@ -175,6 +178,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         print(f"Intents: {self.intent_dict}")
         print(f"Entities: {self.entity_dict}")
         print(f"vocab size: {len(self.vocab_dict)}")
+        print(f"max_seq_len: {self.max_seq_len}")
 
     def tokenize(self, text: str):
         vocab_list = self.tokenizer.do_analysis(text)['termAtt']
