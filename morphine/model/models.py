@@ -43,11 +43,7 @@ class EmbeddingTransformer(nn.Module):
     def forward(self, x):
         src_key_padding_mask = x == self.pad_token_id
         embedding = self.embedding(x)
-        embedding += (
-            self.position_embedding(torch.arange(x.size(1)))
-            .repeat(x.size(0), 1, 1)
-            .type_as(embedding)
-        )
+        embedding += self.position_embedding(torch.arange(x.size(1)).type_as(x)).repeat(x.size(0), 1, 1)
 
         # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
         # feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
