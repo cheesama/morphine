@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class EmbeddingTransformer(nn.Module):
     def __init__(
         self,
@@ -40,17 +41,21 @@ class EmbeddingTransformer(nn.Module):
         nn.init.xavier_uniform_(self.entity_feature.weight)
 
     def forward(self, x):
-        src_key_padding_mask = (x == self.pad_token_id)
+        src_key_padding_mask = x == self.pad_token_id
         embedding = self.embedding(x)
-        embedding += self.position_embedding(torch.arange(x.size(1)).repeat(x.size(0),1,1).type_as(embedding)
+        embedding += (
+            self.position_embedding(torch.arange(x.size(1)))
+            .repeat(x.size(0), 1, 1)
+            .type_as(embedding)
+        )
 
         # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-        #feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
-        feature = self.encoder(embedding.transpose(1, 0)).transpose(1,0) * src_key_padding_mask.float().unsqueeze(2).repeat(1,1,embedding.size(2))
+        # feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
+        feature = self.encoder(embedding.transpose(1, 0)).transpose(
+            1, 0
+        ) * src_key_padding_mask.float().unsqueeze(2).repeat(1, 1, embedding.size(2))
 
         intent_pred = self.intent_feature(feature.mean(1))
         entity_pred = self.entity_feature(feature)
 
         return intent_pred, entity_pred
-
-
