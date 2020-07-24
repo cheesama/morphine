@@ -24,6 +24,9 @@ def train(
     lr_logger = LearningRateLogger()
     checkpoint_callback = model_checkpoint.ModelCheckpoint(prefix=checkpoint_prefix)
 
+    prepare_data_per_node=True
+    if  0 <= gpu_num < 2: prepare_data_per_node=False
+
     if batch_size is None:
         trainer = Trainer(
             auto_scale_batch_size="power",
@@ -32,7 +35,8 @@ def train(
             distributed_backend=distributed_backend,
             early_stop_callback=early_stopping,
             callbacks=[lr_logger],
-            checkpoint_callback=checkpoint_callback
+            checkpoint_callback=checkpoint_callback,
+            prepare_data_per_node=prepare_data_per_node
         )
     else:
         trainer = Trainer(
@@ -41,7 +45,8 @@ def train(
             distributed_backend=distributed_backend,
             early_stop_callback=early_stopping,
             callbacks=[lr_logger],
-            checkpoint_callback=checkpoint_callback
+            checkpoint_callback=checkpoint_callback,
+            prepare_data_per_node=prepare_data_per_node
         )
 
     model_args = {}

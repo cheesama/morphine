@@ -25,7 +25,6 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-
 class MorphineClassifier(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
@@ -147,15 +146,15 @@ class MorphineClassifier(pl.LightningModule):
         intent_pred, entity_pred = self.forward(tokens)
 
         if torch.isnan(tokens).sum().item() > 0:
-            print ('tokens error')
+            assert ValueError('tokens error')
         if torch.isnan(intent_idx).sum().item() > 0:
-            print ('intent_idx error')
+            assert ValueError('intent_idx error')
         if torch.isnan(entity_idx).sum().item() > 0:
-            print ('entity_idx error')
+            assert ValueError('entity_idx error')
         if torch.isnan(intent_pred).sum().item() > 0:
-            print ('intent_pred error')
+            assert ValueError('intent_pred error')
         if torch.isnan(entity_pred).sum().item() > 0:
-            print ('entity_pred error')
+            assert ValueError('entity_pred error')
 
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
@@ -219,7 +218,7 @@ class MorphineClassifier(pl.LightningModule):
         avg_entity_acc = torch.stack([x["val_entity_acc"] for x in outputs]).mean()
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
 
-        print(f"epoch : {self.current_epoch}")
+        print(f"\nepoch : {self.current_epoch}")
         print(f"intent_acc : {avg_intent_acc}, intent_f1 : {avg_intent_f1}")
         print(f"entity_acc : {avg_entity_acc}, val_loss : {avg_loss}")
         print()
