@@ -52,7 +52,8 @@ class MorphineClassifier(pl.LightningModule):
 
         # ignore O tag class label to figure out entity imbalance distribution
         #self.entity_loss_fn = nn.CrossEntropyLoss(ignore_index=self.dataset.pad_token_id)
-        self.entity_loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor([0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)))
+        #self.entity_loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor([0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)))
+        self.entity_loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, x):
         return self.model(x)
