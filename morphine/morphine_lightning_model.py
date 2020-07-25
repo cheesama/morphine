@@ -10,7 +10,6 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.metrics.functional import f1_score
 
 from torchnlp.metrics import get_accuracy, get_token_accuracy
-from sklearn.metrics import balanced_accuracy_score
 
 from .dataset.intent_entity_dataset import (
     RasaIntentEntityDataset,
@@ -159,7 +158,7 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = balanced_accuracy_score(entity_idx.cpu().tolist()[0], entity_pred.argmax(2).cpu().tolist()[0])
+        entity_acc = get_token_accuracy(entity_idx.cpu(), entity_pred.argmax(2).cpu())[0]
 
         tensorboard_logs = {
             "train/intent/acc": intent_acc,
@@ -194,7 +193,7 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = balanced_accuracy_score(entity_idx.cpu().tolist()[0], entity_pred.argmax(2).cpu().tolist()[0])
+        entity_acc = get_token_accuracy(entity_idx.cpu(), entity_pred.argmax(2).cpu())[0]
 
         intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),)
         entity_loss = self.entity_loss_fn(
