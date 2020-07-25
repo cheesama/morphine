@@ -159,9 +159,7 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = balanced_accuracy_score(
-            entity_idx.cpu().tolist()[0], entity_pred.max(2)[1].cpu().tolist()[0]
-        )
+        entity_acc = balanced_accuracy_score(entity_idx.cpu().tolist()[0], entity_pred.argmax(2).cpu().tolist()[0])
 
         tensorboard_logs = {
             "train/intent/acc": intent_acc,
@@ -196,9 +194,7 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = balanced_accuracy_score(
-            entity_idx.cpu().tolist()[0], entity_pred.max(2)[1].cpu().tolist()[0]
-        )
+        entity_acc = balanced_accuracy_score(entity_idx.cpu().tolist()[0], entity_pred.argmax(2).cpu().tolist()[0])
 
         intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),)
         entity_loss = self.entity_loss_fn(

@@ -46,8 +46,8 @@ class EmbeddingTransformer(nn.Module):
         embedding += self.position_embedding(torch.arange(x.size(1)).type_as(x)).repeat(x.size(0), 1, 1)
 
         # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-        # feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
-        feature = self.encoder(embedding.transpose(1, 0)).transpose(1, 0) * src_key_padding_mask.float().unsqueeze(2).repeat(1, 1, embedding.size(2))
+        feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
+        #feature = self.encoder(embedding.transpose(1, 0)).transpose(1, 0) * src_key_padding_mask.float().unsqueeze(2).repeat(1, 1, embedding.size(2))
 
         intent_pred = self.intent_feature(feature.mean(1))
         entity_pred = self.entity_feature(feature)
