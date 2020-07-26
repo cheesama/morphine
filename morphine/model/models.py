@@ -1,9 +1,9 @@
 from torch.nn import TransformerEncoder, TransformerEncoderLayer, LayerNorm
+from torchcrf import CRF
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 
 class EmbeddingTransformer(nn.Module):
     def __init__(
@@ -12,12 +12,10 @@ class EmbeddingTransformer(nn.Module):
         intent_class_num: int,
         entity_class_num: int,
         max_seq_len: int,
+        transformer_layers=2,
+        num_encoder_layers=8,
         d_model=256,
         nhead=8,
-        num_encoder_layers=8,
-        dim_feedforward=1024,
-        dropout=0.2,
-        activation="relu",
         pad_token_id: int = 0,
     ):
         super(EmbeddingTransformer, self).__init__()
@@ -25,31 +23,42 @@ class EmbeddingTransformer(nn.Module):
         self.max_seq_len = max_seq_len
 
         self.encoder = nn.TransformerEncoder(
-            TransformerEncoderLayer(
-                d_model, nhead, dim_feedforward, dropout, activation
-            ),
+            TransformerEncoderLayer(d_model, nhead,),
             num_encoder_layers,
             LayerNorm(d_model),
         )
+
+        self.transformer_layers = transformer_layers
 
         self.embedding = nn.Embedding(vocab_size, d_model)
         self.position_embedding = nn.Embedding(self.max_seq_len, d_model)
         self.intent_feature = nn.Linear(d_model, intent_class_num)
         self.entity_feature = nn.Linear(d_model, entity_class_num)
+        self.entity_featurizer = CRF(entity_class_num, batch_first=True)
 
         nn.init.xavier_uniform_(self.intent_feature.weight)
         nn.init.xavier_uniform_(self.entity_feature.weight)
 
-    def forward(self, x):
+    def forward(self, x, entity_labels=None):
         src_key_padding_mask = x == self.pad_token_id
         embedding = self.embedding(x)
         embedding += self.position_embedding(torch.arange(x.size(1)).type_as(x)).repeat(x.size(0), 1, 1)
 
-        # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-        # feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1,0)
-        feature = self.encoder(embedding.transpose(1, 0)).transpose(1, 0) * src_key_padding_mask.float().unsqueeze(2).repeat(1, 1, embedding.size(2))
+        for i in range(self.transformer_layers):
+            # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
+            if i == 0:
+                feature = self.encoder(embedding.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
+            else:
+                feature = self.encoder(feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
+        # feature = self.encoder(embedding.transpose(1, 0)).transpose(1, 0) * src_key_padding_mask.float().unsqueeze(2).repeat(1, 1, embedding.size(2))
 
         intent_pred = self.intent_feature(feature.mean(1))
         entity_pred = self.entity_feature(feature)
 
+        if entity_labels is not None:
+            mask = (x != self.pad_token_id)
+            #CFR return log likelyhood value
+            entity_loss = self.entity_featurizer(entity_pred, entity_labels, reduction='mean', mask=mask)
+            return intent_pred, entity_pred, -entity_loss
+            
         return intent_pred, entity_pred
