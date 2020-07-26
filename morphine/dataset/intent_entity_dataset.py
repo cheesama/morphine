@@ -20,15 +20,16 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
     
     """
 
-    def __init__(self, markdown_lines: List[str], pad_token_id=0):
+    def __init__(self, markdown_lines: List[str], o_token_id=0, pad_token_id=1):
+        self.o_token_id =  o_token_id
         self.pad_token_id = pad_token_id
 
         self.intent_dict = {}
         self.entity_dict = {}
-        self.entity_dict["O"] = 0  # using BIO tagging
+        self.entity_dict["O"] = self.o_token_id 
+        self.entity_dict["[PAD]"] = self.pad_token_id 
 
         self.vocab_dict = {}
-        self.vocab_dict['[PAD]'] = self.pad_token_id  # set 0 as pad token(handle unknown & padding vocab)
 
         self.dataset = []
         self.max_seq_len = 0
@@ -187,7 +188,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
     def encode(self, text: str, return_tensor: bool = True):
         vocab_list = self.tokenize(text)
-        tokens = [ self.vocab_dict.get(vocab, self.pad_token_id) for vocab in vocab_list ]
+        tokens = [ self.vocab_dict.get(vocab, self.o_token_id) for vocab in vocab_list ]
 
         if type(tokens) == list:
             tokens = torch.tensor(tokens).long()
@@ -208,15 +209,14 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
         intent_idx = self.dataset[idx]["intent_idx"]
 
-        entity_idx = np.array(len(tokens) * [0])  # O tag indicate 0(zero)
+        entity_idx = np.array(len(tokens) * [self.o_token_id])  # O tag indicate 0(zero)
 
-        for entity_info in self.dataset[idx]["entities"]:
+        for entity_seq, entity_info in enumerate(self.dataset[idx]["entities"]):
             ##check whether entity value is include in splitted token
             for token_seq, token_value in enumerate(tokens):
-                for entity_seq, entity_info in enumerate(self.dataset[idx]["entities"]):
-                    if token_value == entity_info["value"]:
-                        entity_idx[token_seq] = entity_info["entity_idx"]
-                        break
+                if token_value in entity_info["value"]:
+                    entity_idx[token_seq] = entity_info["entity_idx"]
+                    break
 
         entity_idx = torch.from_numpy(entity_idx)
 
@@ -231,12 +231,12 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
     def get_vocab_size(self):
         return len(self.vocab_dict)
 
-def token_concat_collate_fn(batch):
+def token_concat_collate_fn(batch, pad_token_id=1):
     """
     batch : tokens have various length, inten_idx, entity_indices have various length 
     """
-    tokens = rnn_utils.pad_sequence([each_data[0] for each_data in batch], batch_first=True).long()
+    tokens = rnn_utils.pad_sequence([each_data[0] for each_data in batch], batch_first=True, padding_value=pad_token_id).long()
     intent_indices = torch.tensor([each_data[1] for each_data in batch]).long()
-    entity_indices = rnn_utils.pad_sequence([each_data[2] for each_data in batch], batch_first=True).long()
+    entity_indices = rnn_utils.pad_sequence([each_data[2] for each_data in batch], batch_first=True, padding_value=pad_token_id).long()
 
     return (tokens, intent_indices, entity_indices)
