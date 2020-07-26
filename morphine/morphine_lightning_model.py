@@ -53,7 +53,10 @@ class MorphineClassifier(pl.LightningModule):
         #self.entity_loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor([0.1] + [1.0] * (len(self.dataset.get_entity_idx()) - 1)))
         self.entity_loss_fn = nn.CrossEntropyLoss()
 
-    def forward(self, x):
+    def forward(self, x, entity_labels=None):
+        if entity_labels is not None:
+            return self.model(x, entity_labels)
+
         return self.model(x)
 
     def prepare_data(self):
@@ -142,7 +145,7 @@ class MorphineClassifier(pl.LightningModule):
         self.model.train()
 
         tokens, intent_idx, entity_idx = batch
-        intent_pred, entity_pred = self.forward(tokens)
+        intent_pred, entity_pred, entity_crf_loss = self.forward(tokens, entity_idx)
 
         if torch.isnan(tokens).sum().item() > 0:
             assert ValueError('tokens error')
@@ -177,10 +180,10 @@ class MorphineClassifier(pl.LightningModule):
 
         if optimizer_idx == 1:
             entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
-            tensorboard_logs["train/entity/loss"] = entity_loss
+            tensorboard_logs["train/entity/loss"] = entity_loss + entity_crf_loss
 
             return {
-                "loss": entity_loss,
+                "loss": entity_loss + entity_crf_loss,
                 "log": tensorboard_logs,
             }
 
@@ -188,7 +191,7 @@ class MorphineClassifier(pl.LightningModule):
         self.model.eval()
 
         tokens, intent_idx, entity_idx = batch
-        intent_pred, entity_pred = self.forward(tokens)
+        intent_pred, entity_pred, entity_crf_loss = self.forward(tokens, entity_idx)
 
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
@@ -196,15 +199,13 @@ class MorphineClassifier(pl.LightningModule):
         entity_acc = get_token_accuracy(entity_idx.cpu(), entity_pred.argmax(2).cpu())[0]
 
         intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),)
-        entity_loss = self.entity_loss_fn(
-            entity_pred.transpose(1, 2), entity_idx.long(),
-        )
+        entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
 
         return {
             "val_intent_acc": torch.Tensor([intent_acc]),
             "val_intent_f1": torch.Tensor([intent_f1]),
             "val_entity_acc": torch.Tensor([entity_acc]),
-            "val_loss": intent_loss + entity_loss,  # + intent_center_loss,
+            "val_loss": intent_loss + entity_loss + entity_crf_loss
         }
 
     def validation_epoch_end(self, outputs):

@@ -1,6 +1,6 @@
-pynori==0.2.0
+pynori
 
 # models
-python-crfsuite
+pytorch-crf
 pytorch-nlp
 pytorch-lightning
