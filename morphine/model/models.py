@@ -16,7 +16,7 @@ class EmbeddingTransformer(nn.Module):
         num_encoder_layers=8,
         d_model=256,
         nhead=8,
-        pad_token_id: int = -1,
+        pad_token_id: int = 1,
     ):
         super(EmbeddingTransformer, self).__init__()
         self.pad_token_id = pad_token_id
