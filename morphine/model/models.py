@@ -57,14 +57,13 @@ class EmbeddingTransformer(nn.Module):
         entity_crf_pred = self.entity_featurizer.decode(entity_pred)
 
         if entity_labels is not None:
-            mask = (x != self.pad_token_id)
-
-            if not mask[:,0].all():
-                print (x)
-                print (mask)
-
             #CRF return log likelyhood value
-            entity_loss = self.entity_featurizer(entity_pred, entity_labels, reduction='mean', mask=mask)
-            return intent_pred, entity_crf_pred, -entity_loss
+            mask = (src_key_padding_mask == 0)
+            if not mask[:,0].all():
+                entity_loss = self.entity_featurizer(entity_pred, entity_labels, reduction='mean')
+            else:
+                entity_loss = self.entity_featurizer(entity_pred, entity_labels, reduction='mean', mask=mask)
             
+            return intent_pred, entity_crf_pred, -entity_loss
+
         return intent_pred, entity_crf_pred
