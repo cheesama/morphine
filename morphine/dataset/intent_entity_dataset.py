@@ -27,6 +27,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         self.intent_dict = {}
         self.entity_dict = {}
         self.entity_dict["O"] = self.o_token_id 
+        self.entity_dict["[PAD]"] = self.pad_token_id 
 
         self.vocab_dict = {}
         self.vocab_dict["[UNK]"] = self.o_token_id 
@@ -206,7 +207,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         tokens = self.tokenize(self.dataset[idx]["text"])
-        token_ids = [ self.vocab_dict.get(vocab, self.o_token_id) for vocab in tokens ]
+        token_ids = torch.tensor([self.vocab_dict.get(vocab, self.o_token_id) for vocab in tokens])
 
         intent_idx = self.dataset[idx]["intent_idx"]
 
@@ -221,7 +222,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
         entity_idx = torch.from_numpy(entity_idx)
 
-        return torch.tensor(token_ids), intent_idx, entity_idx
+        return token_ids, intent_idx, entity_idx
 
     def get_intent_idx(self):
         return self.intent_dict
