@@ -156,13 +156,11 @@ class MorphineClassifier(pl.LightningModule):
             assert ValueError('entity_idx error')
         if torch.isnan(intent_pred).sum().item() > 0:
             assert ValueError('intent_pred error')
-        if torch.isnan(entity_pred).sum().item() > 0:
-            assert ValueError('entity_pred error')
 
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = get_token_accuracy(entity_idx.cpu(), entity_pred.argmax(2).cpu())[0]
+        entity_acc = get_token_accuracy(entity_idx.cpu(), torch.tensor(entity_pred).cpu())[0]
 
         tensorboard_logs = {
             "train/intent/acc": intent_acc,
@@ -180,11 +178,10 @@ class MorphineClassifier(pl.LightningModule):
             }
 
         if optimizer_idx == 1:
-            entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
-            tensorboard_logs["train/entity/loss"] = entity_loss + entity_crf_loss
+            tensorboard_logs["train/entity/loss"] = entity_crf_loss
 
             return {
-                "loss": entity_loss + entity_crf_loss,
+                "loss": entity_crf_loss,
                 "log": tensorboard_logs,
             }
 
@@ -197,16 +194,15 @@ class MorphineClassifier(pl.LightningModule):
         intent_acc = get_accuracy(intent_pred.argmax(1), intent_idx)[0]
         intent_f1 = f1_score(intent_pred.argmax(1), intent_idx)
 
-        entity_acc = get_token_accuracy(entity_idx.cpu(), entity_pred.argmax(2).cpu())[0]
+        entity_acc = get_token_accuracy(entity_idx.cpu(), torch.tensor(entity_pred).cpu())[0]
 
         intent_loss = self.intent_loss_fn(intent_pred, intent_idx.long(),)
-        entity_loss = self.entity_loss_fn(entity_pred.transpose(1, 2), entity_idx.long())
 
         return {
             "val_intent_acc": torch.Tensor([intent_acc]),
             "val_intent_f1": torch.Tensor([intent_f1]),
             "val_entity_acc": torch.Tensor([entity_acc]),
-            "val_loss": intent_loss + entity_loss + entity_crf_loss
+            "val_loss": intent_loss + entity_crf_loss
         }
 
     def validation_epoch_end(self, outputs):
