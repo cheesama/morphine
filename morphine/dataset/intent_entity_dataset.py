@@ -206,7 +206,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         tokens = self.tokenize(self.dataset[idx]["text"])
-        token_ids = [ self.vocab_dict.get(vocab, self.pad_token_id) for vocab in tokens ]
+        token_ids = [ self.vocab_dict.get(vocab, self.o_token_id) for vocab in tokens ]
 
         intent_idx = self.dataset[idx]["intent_idx"]
 
