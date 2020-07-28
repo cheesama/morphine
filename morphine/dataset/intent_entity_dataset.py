@@ -27,6 +27,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         self.intent_dict = {}
         self.entity_dict = {}
         self.entity_dict["O"] = self.o_token_id 
+        self.entity_dict["[PAD]"] = self.pad_token_id 
 
         self.vocab_dict = {}
         self.vocab_dict["[UNK]"] = self.o_token_id 
