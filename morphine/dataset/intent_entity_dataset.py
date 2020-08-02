@@ -152,7 +152,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
                         each_data_dict["text"] = text.strip()
                         each_data_dict["intent"] = current_intent_focus
                         each_data_dict["intent_idx"] = self.intent_dict[current_intent_focus]
-                        self.intent_sample_count[each_data_dict["inten_idx"]] += 1
+                        self.intent_sample_count[each_data_dict["intent_idx"]] += 1
                         each_data_dict["entities"] = []
 
                         for value, type_str in zip(entity_value_list, entity_type_list):
