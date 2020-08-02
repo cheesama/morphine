@@ -65,7 +65,7 @@ class MorphineClassifier(pl.LightningModule):
 
         self.train_dataset, self.val_dataset = random_split(self.dataset, [train_length, len(self.dataset) - train_length])
 
-        sampling_weights = [float(item[1]) / len(self.dataset.intent_sample_count[item[1]]) for item in self.train_dataset]
+        sampling_weights = [1.0 / len(self.dataset.intent_sample_count[item[1]]) for item in self.train_dataset]
         self.sampler = WeightedRandomSampler(sampling_weights, len(sampling_weights), replacement=False)
 
         self.hparams.intent_label = self.get_intent_label()
