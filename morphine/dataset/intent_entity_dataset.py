@@ -25,6 +25,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
         self.pad_token_id = pad_token_id
 
         self.intent_dict = {}
+        self.inent_sample_count = []
         self.entity_dict = {}
         self.entity_dict["O"] = self.o_token_id 
         self.entity_dict["[PAD]"] = self.pad_token_id 
@@ -106,6 +107,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
                 self.entity_dict[str(entity_type) + "_I"] = len(self.entity_dict)
 
         current_intent_focus = ""
+        self.intent_sample_count = [0] * len(self.intent_dict)
 
         for line in tqdm(
             markdown_lines, desc="Extracting Intent & Entity in NLU markdown files...",
@@ -149,9 +151,8 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
                         each_data_dict = {}
                         each_data_dict["text"] = text.strip()
                         each_data_dict["intent"] = current_intent_focus
-                        each_data_dict["intent_idx"] = self.intent_dict[
-                            current_intent_focus
-                        ]
+                        each_data_dict["intent_idx"] = self.intent_dict[current_intent_focus]
+                        self.intent_sample_count[each_data_dict["inten_idx"]] += 1
                         each_data_dict["entities"] = []
 
                         for value, type_str in zip(entity_value_list, entity_type_list):
@@ -179,6 +180,7 @@ class RasaIntentEntityDataset(torch.utils.data.Dataset):
                         self.dataset.append(each_data_dict)
 
         print(f"Intents: {self.intent_dict}")
+        print(f"Intent sample count: {self.intent_sample_count}")
         print(f"Entities: {self.entity_dict}")
         print(f"vocab size: {len(self.vocab_dict)}")
         print(f"max_seq_len: {self.max_seq_len}")
