@@ -12,9 +12,9 @@ class EmbeddingTransformer(nn.Module):
         intent_class_num: int,
         entity_class_num: int,
         max_seq_len: int,
-        transformer_layers=2,
+        transformer_layers=3,
         num_encoder_layers=8,
-        d_model=256,
+        d_model=128,
         nhead=8,
         pad_token_id: int = 1,
     ):

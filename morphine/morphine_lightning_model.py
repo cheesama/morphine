@@ -63,26 +63,10 @@ class MorphineClassifier(pl.LightningModule):
     def prepare_data(self):
         train_length = int(len(self.dataset) * self.train_ratio)
 
-        self.train_dataset, self.val_dataset = random_split(
-            self.dataset, [train_length, len(self.dataset) - train_length],
-        )
+        self.train_dataset, self.val_dataset = random_split(self.dataset, [train_length, len(self.dataset) - train_length])
 
-        '''
-        intent_sampling_weights = [
-            1 / item[1]
-            for item in sorted(
-                Counter(
-                    [each_dataset[1] for each_dataset in self.train_dataset]
-                ).items()
-            )
-        ]
-        sampling_weights = [
-            intent_sampling_weights[item[1]] for item in self.train_dataset
-        ]
-        self.sampler = WeightedRandomSampler(
-            sampling_weights, len(sampling_weights), replacement=False
-        )
-        '''
+        sampling_weights = [1.0 / self.dataset.intent_sample_count[item[1]] for item in self.train_dataset]
+        self.sampler = WeightedRandomSampler(sampling_weights, len(sampling_weights), replacement=False)
 
         self.hparams.intent_label = self.get_intent_label()
         self.hparams.entity_label = self.get_entity_label()
@@ -105,7 +89,7 @@ class MorphineClassifier(pl.LightningModule):
             batch_size=self.batch_size,
             num_workers=multiprocessing.cpu_count() * 2,
             collate_fn=token_concat_collate_fn,
-            #sampler=self.sampler,
+            sampler=self.sampler,
         )
         return train_loader
 
