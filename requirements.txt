@@ -3,4 +3,5 @@ pynori
 # models
 pytorch-crf
 pytorch-nlp
-pytorch-lightning==0.8.4
+pytorch-lightning==0.8.5
+torch

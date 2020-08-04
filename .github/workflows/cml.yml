@@ -16,8 +16,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           TB_CREDENTIALS: ${{ secrets.TB_CREDENTIALS }}
         run: |
-          pip install -r requirements.txt
-          pip install .
+          pip install --user -r requirements.txt
+          pip install --user .
 
           # write CML report
           cml-tensorboard-dev --logdir tests/lightning_logs --md --name "Go to tensorboard" >> report.md

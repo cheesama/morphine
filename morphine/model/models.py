@@ -22,7 +22,12 @@ class EmbeddingTransformer(nn.Module):
         self.pad_token_id = pad_token_id
         self.max_seq_len = max_seq_len
 
-        self.encoder = nn.TransformerEncoder(
+        self.intent_encoder = nn.TransformerEncoder(
+            TransformerEncoderLayer(d_model, nhead,),
+            num_encoder_layers,
+            LayerNorm(d_model),
+        )
+        self.entity_encoder = nn.TransformerEncoder(
             TransformerEncoderLayer(d_model, nhead,),
             num_encoder_layers,
             LayerNorm(d_model),
@@ -46,12 +51,12 @@ class EmbeddingTransformer(nn.Module):
 
         for i in range(self.transformer_layers):
             # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-            #feature = self.encoder(feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
-            feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
-            #feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0) * src_key_padding_mask.float().unsqueeze(2).repeat(1, 1, feature.size(2))
+            intent_feature = self.encoder(feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
+            entity_feature = self.encoder(feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
+            #feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
 
-        intent_pred = self.intent_feature(feature.mean(1))
-        entity_pred = self.entity_feature(feature)
+        intent_pred = self.intent_feature(intent_feature.mean(1))
+        entity_pred = self.entity_feature(entity_feature)
         entity_crf_pred = self.entity_featurizer.decode(entity_pred)
 
         if entity_labels is not None:
