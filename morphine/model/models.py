@@ -13,7 +13,7 @@ class EmbeddingTransformer(nn.Module):
         intent_class_num: int,
         entity_class_num: int,
         max_seq_len: int,
-        transformer_layers=3,
+        transformer_layers=2,
         num_encoder_layers=8,
         d_model=128,
         nhead=8,
@@ -58,9 +58,8 @@ class EmbeddingTransformer(nn.Module):
         for i in range(self.transformer_layers):
             # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
             intent_feature = self.intent_encoder(intent_feature.transpose(1, 0)).transpose(1, 0)
-            entity_feature = self.entity_encoder(
-                entity_feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask
-            ).transpose(1, 0)
+            entity_feature = self.entity_encoder(entity_feature.transpose(1, 0)).transpose(1, 0)
+            #entity_feature = self.entity_encoder(entity_feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
             # feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
 
         intent_pred = self.intent_feature(intent_feature.mean(1))
