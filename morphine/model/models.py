@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class EmbeddingTransformer(nn.Module):
     def __init__(
         self,
@@ -47,26 +48,36 @@ class EmbeddingTransformer(nn.Module):
     def forward(self, x, entity_labels=None):
         src_key_padding_mask = x == self.pad_token_id
         embedding = self.embedding(x)
-        feature = embedding + self.position_embedding(torch.arange(x.size(1)).type_as(x)).repeat(x.size(0), 1, 1)
+        feature = embedding + self.position_embedding(
+            torch.arange(x.size(1)).type_as(x)
+        ).repeat(x.size(0), 1, 1)
 
         for i in range(self.transformer_layers):
             # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-            intent_feature = self.encoder(feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
-            entity_feature = self.encoder(feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
-            #feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
+            intent_feature = self.intent_encoder(
+                feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask
+            ).transpose(1, 0)
+            entity_feature = self.entity_encoder(
+                feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask
+            ).transpose(1, 0)
+            # feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
 
         intent_pred = self.intent_feature(intent_feature.mean(1))
         entity_pred = self.entity_feature(entity_feature)
         entity_crf_pred = self.entity_featurizer.decode(entity_pred)
 
         if entity_labels is not None:
-            #CRF return log likelyhood value
-            mask = (src_key_padding_mask == 0)
-            if not mask[:,0].all():
-                entity_loss = self.entity_featurizer(entity_pred, entity_labels, reduction='mean')
+            # CRF return log likelyhood value
+            mask = src_key_padding_mask == 0
+            if not mask[:, 0].all():
+                entity_loss = self.entity_featurizer(
+                    entity_pred, entity_labels, reduction="mean"
+                )
             else:
-                entity_loss = self.entity_featurizer(entity_pred, entity_labels, reduction='mean', mask=mask)
-            
+                entity_loss = self.entity_featurizer(
+                    entity_pred, entity_labels, reduction="mean", mask=mask
+                )
+
             return intent_pred, entity_crf_pred, -entity_loss
 
         return intent_pred, entity_crf_pred
