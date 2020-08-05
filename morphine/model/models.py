@@ -52,13 +52,14 @@ class EmbeddingTransformer(nn.Module):
             torch.arange(x.size(1)).type_as(x)
         ).repeat(x.size(0), 1, 1)
 
+        intent_feature = feature
+        entity_feature = feature
+
         for i in range(self.transformer_layers):
             # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-            intent_feature = self.intent_encoder(
-                feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask
-            ).transpose(1, 0)
+            intent_feature = self.intent_encoder(intent_feature.transpose(1, 0)).transpose(1, 0)
             entity_feature = self.entity_encoder(
-                feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask
+                entity_feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask
             ).transpose(1, 0)
             # feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
 
