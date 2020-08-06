@@ -48,19 +48,20 @@ class EmbeddingTransformer(nn.Module):
     def forward(self, x, entity_labels=None):
         src_key_padding_mask = x == self.pad_token_id
         embedding = self.embedding(x)
-        feature = embedding + self.position_embedding(
-            torch.arange(x.size(1)).type_as(x)
-        ).repeat(x.size(0), 1, 1)
+        feature = embedding + self.position_embedding(torch.arange(x.size(1)).type_as(x)).repeat(x.size(0), 1, 1)
 
         intent_feature = feature
         entity_feature = feature
 
         for i in range(self.transformer_layers):
             # (N,S,E) -> (S,N,E) => (T,N,E) -> (N,T,E)
-            intent_feature = self.intent_encoder(intent_feature.transpose(1, 0)).transpose(1, 0)
-            entity_feature = self.entity_encoder(entity_feature.transpose(1, 0)).transpose(1, 0)
-            #entity_feature = self.entity_encoder(entity_feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
-            # feature = self.encoder(feature.transpose(1, 0)).transpose(1, 0)
+            #intent_feature = self.intent_encoder(intent_feature.transpose(1, 0)).transpose(1, 0)
+            intent_feature = self.intent_encoder(intent_feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
+            intent_feature = intent_feature.masked_fill(torch.isnan(intent_feature), 0)
+
+            #entity_feature = self.entity_encoder(entity_feature.transpose(1, 0)).transpose(1, 0)
+            entity_feature = self.entity_encoder(entity_feature.transpose(1, 0), src_key_padding_mask=src_key_padding_mask).transpose(1, 0)
+            entity_feature = entity_feature.masked_fill(torch.isnan(entity_feature), 0)
 
         intent_pred = self.intent_feature(intent_feature.mean(1))
         entity_pred = self.entity_feature(entity_feature)
